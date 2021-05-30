@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image" href="images/png/042-checked.png">
+    <title>To-Do</title>
+</head>
+<body onscroll="isStuck()">
+    <div id="app" class="body__container">
+        <header class="fixed top-0 left-0">
+            <div class="header__before"></div>
+            <div class="header__after"></div>
+            <div class="header__inner flex justify-between items-center">
+                <div class="header__left flex items-center">
+                    <button class="header__logo inline-block" @click="vars.conditions.loginIsOpen = true">
+                        <img src="images/png/042-checked.png">
+                    </button>
+                    <button class="header__title inline-block" @click="vars.conditions.loginIsOpen = true">
+                        To-Do List
+                    </button>
+                </div>
+                <div class="header__right flex">
+                    <button class="header__search inline-block" @click="vars.conditions.searchIsOpen = true">
+                        <img src="images/png/019-magnifying glass.png">
+                    </button>
+                    <button class="header__stats inline-block" @click="vars.conditions.popupIsOpen = true; openPopup()">
+                        <img src="images/png/029-medal.png">
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="main__container">
+                <p class="input-area__text text-center"><b>Add new item</b></p>
+                <div class="input-area sticky">
+                    <div class="flex justify-between" v-if="vars.conditions.isEditing">
+                        <input class="inputField rounded-full" type="text" spellcheck="false" placeholder="Dauletkhan toxic..." onfocus="this.placeholder=''" onblur="this.placeholder='Dauletkhan toxic...'" v-model="vars.values.inputValue" ref="inputField" @keyup.enter="updateItem">
+                        <button class="input__clear" @click="clearInput">
+                            <img src="images/png/033-minus.png">
+                        </button>
+                        <button class="input__add" @click="updateItem">
+                            <img src="images/png/031-plus.png">
+                        </button>
+                    </div>
+                    <div class="flex justify-between" v-else>
+                        <input class="inputField rounded-full" type="text" spellcheck="false" placeholder="Dauletkhan toxic..." onfocus="this.placeholder=''" onblur="this.placeholder='Dauletkhan toxic...'" v-model="vars.values.inputValue" ref="inputField" @keyup.enter="addItem">
+                        <button class="input__clear" @click="clearInput">
+                            <img src="images/png/033-minus.png">
+                        </button>
+                        <button class="input__add" @click="addItem">
+                            <img src="images/png/031-plus.png">
+                        </button>
+                    </div>
+                </div>
+
+                <div class="items-container">
+                    <ul class="items">
+                        <li class="item" v-for="(todo, index) in vars.finalTodos" :key="'todo'+index">
+                            <div :style="{ 'background-color': todo.bgColor }" class="item__content rounded-full w-full h-full flex items-center justify-between">
+                                <div class="item__left flex" @click="todo.pinned = false; todo.checked = !todo.checked; smthChanged()">
+                                    <input type="checkbox" :class="todo.checked && 'checked'">
+                                    <label :for="'todo'+index"><p>{{ todo.todoValue }}</p></label>
+                                </div>
+                                <div class="item__right flex">
+                                    <button class="item__star" :class="todo.starred && 'starred'" @click="todo.starred = !todo.starred; smthChanged();">
+                                        <img src="images/png/007-favourite.png">
+                                    </button>
+                                    <button class="item__pin" :class="todo.pinned && 'pinned'" @click="todo.pinned = todo.checked ? false : !todo.pinned; smthChanged();">
+                                        <img src="images/png/013-push pin.png">
+                                    </button>
+                                    <button class="item__delete" @click="deleteItem(index)">
+                                        <img src="images/png/033-minus.png">
+                                    </button>
+                                    <button class="item__edit" @click="editItem(index, todo.todoValue)">
+                                        <img src="images/png/pencil.png">
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <div class="login-register-page login-page fixed w-full h-full top-0 left-0 flex items-center justify-center" :class="vars.conditions.loginIsOpen && 'openLogin'">
+            <div class="login__content w-full">
+                <div class="popup__title"><b>Sign in</b></div>
+                <div class="login__inner-content">
+                    <input type="text" class="login__username rounded-full w-full mt-2.5" spellcheck="false" placeholder="Username..." onfocus="this.placeholder=''" onblur="this.placeholder='Username...'" v-model="vars.values.loginUsernameValue" @keyup.enter="this.$refs.loginPassword.focus();">
+                    <input type="password" class="login__password rounded-full w-full mt-2.5" spellcheck="false" placeholder="Password..." onfocus="this.placeholder=''" onblur="this.placeholder='Password...'" v-model="vars.values.loginPasswordValue" @keyup.enter="login" ref="loginPassword">
+                    <button class="login__button w-full mt-2.5" @click="login"><b>SIGN IN</b></button>
+                    <div class="error-message w-full mt-2.5" :class="vars.conditions.isLoginInvalid && 'invalid'">Invalid username or password</div>
+                    <div class="text-with-line flex justify-between mt-2.5">
+                        <div class="line__left"></div>
+                        <div class="login-register-text">or</div>
+                        <div class="line__right"></div>
+                    </div>
+                    <button class="login__button w-full mt-2 5" @click="vars.conditions.registerIsOpen = true; vars.conditions.loginIsOpen = false"><b>SIGN UP</b></button>
+                </div>
+            </div>
+            <button class="popup__close absolute top-2.5 right-2.5" @click="vars.conditions.loginIsOpen = false; vars.conditions.registerIsOpen = false">&times;</button>
+        </div>
+
+        <div class="login-register-page register-page fixed w-full h-full top-0 left-0 flex items-center justify-center" :class="vars.conditions.registerIsOpen && 'openLogin'">
+            <div class="login__content w-full">
+                <div class="popup__title"><b>Sign up</b></div>
+                <div class="login__inner-content">
+                    <input type="text" class="login__username rounded-full w-full mt-2.5" spellcheck="false" placeholder="New username..." onfocus="this.placeholder=''" onblur="this.placeholder='New username...'" v-model="vars.values.registerUsernameValue" @keyup.enter="this.$refs.registerPassword.focus();">
+                    <input type="password" class="login__password rounded-full w-full mt-2.5" spellcheck="false" placeholder="New password..." onfocus="this.placeholder=''" onblur="this.placeholder='New password...'" v-model="vars.values.registerPasswordValue" @keyup.enter="register" ref="registerPassword">
+                    <button class="login__button w-full mt-2.5" @click="register"><b>SIGN UP</b></button>
+                    <div class="error-message w-full mt-2.5" :class="vars.conditions.isRegisterInvalid && 'invalid'">Invalid username or password</div>
+                    <div class="text-with-line flex justify-between mt-2.5">
+                        <div class="line__left"></div>
+                        <div class="login-register-text">or</div>
+                        <div class="line__right"></div>
+                    </div>
+                    <button class="login__button w-full mt-2 5" @click="vars.conditions.loginIsOpen = true; vars.conditions.registerIsOpen= false"><b>SIGN IN</b></button>
+                </div>
+            </div>
+            <button class="popup__close absolute top-2.5 right-2.5" @click="vars.conditions.loginIsOpen = false; vars.conditions.registerIsOpen = false">&times;</button>
+        </div>
+
+        <div class="search-window fixed" :class="vars.conditions.searchIsOpen && 'openSearch'">
+            <div class="search-area fixed flex items-center">
+                <div class="search-area__content relative top-0 left-0 h-full">
+                    <input class="searchField search-input h-full rounded-full absolute top-0" type="text" spellcheck="false" placeholder="Search..." onfocus="this.placeholder=''" onblur="this.placeholder='Search...'" v-model="vars.values.searchValue" ref="searchField" @keyup.enter="vars.conditions.searchIsOpen = false; smthChanged();">
+                    <div class="search-area__buttons flex items-center absolute top-0 right-0">
+                        <button class="searchChecked" :class="vars.conditions.showOnlyChecked && 'showChecked'" @click="vars.conditions.showOnlyChecked = !vars.conditions.showOnlyChecked; vars.conditions.showOnlyPinned = vars.conditions.showOnlyChecked ? false : vars.conditions.showOnlyPinned;">
+                            <img src="images/png/042-checked.png">
+                        </button>
+                        <button class="searchStar" :class="vars.conditions.showOnlyStarred && 'showStarred'" @click="vars.conditions.showOnlyStarred = !vars.conditions.showOnlyStarred;">
+                            <img src="images/png/007-favourite.png">
+                        </button>
+                        <button class="searchPin" :class="vars.conditions.showOnlyPinned && 'showPinned'" @click="vars.conditions.showOnlyPinned = !vars.conditions.showOnlyPinned; vars.conditions.showOnlyChecked = vars.conditions.showOnlyPinned ? false : vars.conditions.showOnlyChecked;">
+                            <img src="images/png/013-push pin.png">
+                        </button>
+                        <button class="searchButton" @click="vars.conditions.searchIsOpen = false; smthChanged();">
+                            <img src="images/png/019-magnifying glass.png">
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="search-area__blank-space absolute left-0 w-full h-full top-0" @click="vars.conditions.searchIsOpen = false; clearSearch()"></div>
+        </div>
+
+        <div class="popup fixed w-full h-full top-0 left-0 flex items-center" :class="vars.conditions.popupIsOpen && 'open'">
+            <div class="popup__blank-space absolute top-0 left-0 w-full h-full" @click="vars.conditions.popupIsOpen = false"></div>
+            <div class="popup__body flex justify-center w-full">
+                <div class="popup__content relative left-0 w-full">
+                    <div class="popup__title pb-2.5 mb-2.5"><b>Stats</b></div>
+                    <div class="popup__inner-content">
+                        Total number of items: {{ vars.stats.todosNumber }}<br>
+                        Checked items: {{ vars.stats.checkedTodosNumber }}<br>
+                        <b>Un</b>checked items: {{ vars.stats.uncheckedTodosNumber }}<br>
+                        Starred items: {{ vars.stats.starredTodosNumber }}<br>
+                        <b>Not</b> starred items: {{ vars.stats.notStarredTodosNumber }}<br>
+                        Pinned items: {{ vars.stats.pinnedTodosNumber }}<br>
+                        <b>Not</b> pinned items: {{ vars.stats.notPinnedTodosNumber }}<br>
+                        Checked starred items: {{ vars.stats.checkedStarredTodosNumber }}<br>
+                        <b>Un</b>checked starred items: {{ vars.stats.uncheckedStarredTodosNumber }}<br>
+                        <b>Not</b> starred or pinned items: {{ vars.stats.notStarredPinnedTodosNumber }}<br>
+                        Starred <b>and</b> pinned items: {{ vars.stats.starredAndPinnedTodosNumber }}
+                    </div>
+                    <button class="popup__close absolute top-2.5 right-2.5" @click="vars.conditions.popupIsOpen = false">&times;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="script.js" />
+</body>
+</html>
